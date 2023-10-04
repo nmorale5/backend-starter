@@ -2,9 +2,10 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Friend, Post, User, WebSession } from "./app";
+import { Friend, Post, User, Vote, WebSession } from "./app";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
+import { VoteStatus } from "./concepts/vote";
 import { WebSessionDoc } from "./concepts/websession";
 import Responses from "./responses";
 
@@ -135,6 +136,66 @@ class Routes {
     const user = WebSession.getUser(session);
     const fromId = (await User.getUserByUsername(from))._id;
     return await Friend.rejectRequest(fromId, user);
+  }
+
+  // view all notifications for the user in the current session
+  @Router.get("/notifications")
+  async getNotifications(session: WebSessionDoc) {
+    throw new Error("Not implemented yet");
+  }
+
+  // post the notification event so that other users can see the notification in their notification board
+  @Router.put("/notifications/:eventData")
+  async postNotificationEvent(session: WebSessionDoc, eventData: string) {
+    throw new Error("Not implemented yet");
+  }
+
+  // determine whether the given post has been voted, and return the type of vote
+  @Router.get("/vote/status/:post")
+  async getVoteStatus(session: WebSessionDoc, post: ObjectId) {
+    Vote.getVote(post);
+  }
+
+  // upvote a post. Also removes a downvote if one exists for this user
+  @Router.put("/vote/upvote/:post")
+  async sendUpvote(session: WebSessionDoc, post: ObjectId) {
+    Vote.setVote(VoteStatus.Upvote, post);
+  }
+
+  // downvote a post. Also removes an upvote if one exists for this user
+  @Router.put("/vote/downvote/:post")
+  async sendDownvote(session: WebSessionDoc, post: ObjectId) {
+    Vote.setVote(VoteStatus.Downvote, post);
+  }
+
+  // remove the vote status (i.e., an upvote or downvote) on a post
+  @Router.put("/vote/unvote/:post")
+  async sendUnvote(session: WebSessionDoc, post: ObjectId) {
+    Vote.removeVote(post);
+  }
+
+  // get all existing threads
+  @Router.get("/thread")
+  async getThreads(session: WebSessionDoc) {
+    throw new Error("Not implemented yet");
+  }
+
+  // create a new thread
+  @Router.post("/thread")
+  async createThread(session: WebSessionDoc, content: string) {
+    throw new Error("Not implemented yet");
+  }
+
+  // add the given post to the given thread
+  @Router.put("/thread/:thread/:post")
+  async addThread(session: WebSessionDoc, thread: ObjectId, post: ObjectId) {
+    throw new Error("Not implemented yet");
+  }
+
+  // deletes a thread
+  @Router.delete("/thread/:thread")
+  async deleteThread(session: WebSessionDoc, thread: ObjectId) {
+    throw new Error("Not implemented yet");
   }
 }
 

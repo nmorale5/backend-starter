@@ -77,6 +77,30 @@ const operations: operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Get Vote Status",
+    endpoint: "/vote/status/:post",
+    method: "GET",
+    fields: { post: "input" },
+  },
+  {
+    name: "Send Upvote",
+    endpoint: "/vote/upvote/:post",
+    method: "PUT",
+    fields: { post: "input" },
+  },
+  {
+    name: "Send Downvote",
+    endpoint: "/vote/downvote/:post",
+    method: "GET",
+    fields: { post: "input" },
+  },
+  {
+    name: "Remove Vote",
+    endpoint: "/vote/unvote/:post",
+    method: "PUT",
+    fields: { post: "input" },
+  },
 ];
 
 // Do not edit below here.
