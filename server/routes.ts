@@ -2,10 +2,9 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Friend, Post, User, Vote, WebSession } from "./app";
+import { Friend, Post, Thread, User, Vote, WebSession } from "./app";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
-import { VoteStatus } from "./concepts/vote";
 import { WebSessionDoc } from "./concepts/websession";
 import Responses from "./responses";
 
@@ -138,64 +137,107 @@ class Routes {
     return await Friend.rejectRequest(fromId, user);
   }
 
-  // view all notifications for the user in the current session
-  @Router.get("/notifications")
-  async getNotifications(session: WebSessionDoc) {
-    throw new Error("Not implemented yet");
-  }
-
-  // post the notification event so that other users can see the notification in their notification board
-  @Router.put("/notifications/:eventData")
-  async postNotificationEvent(session: WebSessionDoc, eventData: string) {
-    throw new Error("Not implemented yet");
-  }
-
-  // determine whether the given post has been voted, and return the type of vote
-  @Router.get("/vote/status/:post")
-  async getVoteStatus(session: WebSessionDoc, post: ObjectId) {
-    Vote.getVote(post);
+  // get all votes for the current post
+  @Router.get("/votes/:content")
+  async getAllVotes(content: ObjectId) {
+    return await Vote.getVotes(content);
   }
 
   // upvote a post. Also removes a downvote if one exists for this user
-  @Router.put("/vote/upvote/:post")
-  async sendUpvote(session: WebSessionDoc, post: ObjectId) {
-    Vote.setVote(VoteStatus.Upvote, post);
+  @Router.put("/votes/:content/upvote")
+  async sendUpvote(session: WebSessionDoc, content: ObjectId) {
+    const user = WebSession.getUser(session);
+    return await Vote.setVote(content, user, true);
   }
 
   // downvote a post. Also removes an upvote if one exists for this user
-  @Router.put("/vote/downvote/:post")
-  async sendDownvote(session: WebSessionDoc, post: ObjectId) {
-    Vote.setVote(VoteStatus.Downvote, post);
+  @Router.put("/votes/:content/downvote")
+  async sendDownvote(session: WebSessionDoc, content: ObjectId) {
+    const user = WebSession.getUser(session);
+    return await Vote.setVote(content, user, false);
   }
 
   // remove the vote status (i.e., an upvote or downvote) on a post
-  @Router.put("/vote/unvote/:post")
-  async sendUnvote(session: WebSessionDoc, post: ObjectId) {
-    Vote.removeVote(post);
+  @Router.delete("/votes/:content")
+  async deleteVote(session: WebSessionDoc, content: ObjectId) {
+    const user = WebSession.getUser(session);
+    return await Vote.removeVote(content, user);
   }
 
   // get all existing threads
-  @Router.get("/thread")
-  async getThreads(session: WebSessionDoc) {
-    throw new Error("Not implemented yet");
+  @Router.get("/threads")
+  async getThreads() {
+    return await Thread.getAllThreads();
+  }
+
+  // get all posts from the given thread
+  @Router.get("/threads/:thread")
+  async getPostsFromThread(thread: ObjectId) {
+    return await Thread.getAllFromThread(thread);
   }
 
   // create a new thread
-  @Router.post("/thread")
-  async createThread(session: WebSessionDoc, content: string) {
-    throw new Error("Not implemented yet");
+  @Router.post("/threads")
+  async createThread(content: ObjectId) {
+    return await Thread.createThread(content);
   }
 
   // add the given post to the given thread
-  @Router.put("/thread/:thread/:post")
+  @Router.put("/threads/:thread/:post")
   async addThread(session: WebSessionDoc, thread: ObjectId, post: ObjectId) {
-    throw new Error("Not implemented yet");
+    return await Thread.linkToThread(thread, post);
   }
 
-  // deletes a thread
-  @Router.delete("/thread/:thread")
-  async deleteThread(session: WebSessionDoc, thread: ObjectId) {
-    throw new Error("Not implemented yet");
+  // removes a post from a thread
+  @Router.delete("/threads/:thread/:post")
+  async removeFromThread(thread: ObjectId, post: ObjectId) {
+    return await Thread.removeFromThread(thread, post);
+  }
+
+  // deletes a thread and all posts related to it
+  @Router.delete("/threads/:thread")
+  async deleteThread(thread: ObjectId) {
+    return await Thread.deleteThread(thread);
+  }
+
+  @Router.get("/comments/:parent")
+  async getComments(parent: ObjectId) {
+    const comments = (await Thread.getAllFromThread(parent)).map(async (doc) => {
+      return (await Post.getPosts({ _id: doc.content })).at(0);
+    });
+    return await Promise.all(comments);
+  }
+
+  @Router.post("/comments/:parent")
+  async createComment(session: WebSessionDoc, content: string, parent: ObjectId) {
+    const user = WebSession.getUser(session);
+    const created = await Post.create(user, content);
+    await Thread.linkToThread(created.post!._id, parent);
+    return { msg: created.msg, post: await Responses.post(created.post) };
+  }
+
+  @Router.patch("/comments/:_id")
+  async updateComment(session: WebSessionDoc, _id: ObjectId, update: Partial<PostDoc>) {
+    const user = WebSession.getUser(session);
+    await Post.isAuthor(user, _id);
+    return await Post.update(_id, update);
+  }
+
+  @Router.delete("/comments/:_id")
+  async deleteComment(session: WebSessionDoc, _id: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Post.isAuthor(user, _id);
+    const parent = await Thread.getParent(_id);
+    await Thread.removeFromThread(_id, parent);
+    return Post.delete(_id);
+  }
+
+  // view all notifications for the user in the current session
+  @Router.get("/notifications")
+  async getNotifications(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    const commentNotifs = (await Post.getByAuthor(user)).flatMap(async (post) => await Thread.getAllFromThread(post._id));
+    return await Promise.all(commentNotifs);
   }
 }
 

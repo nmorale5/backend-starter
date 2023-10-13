@@ -3,7 +3,7 @@ import { BaseDoc } from "../framework/doc";
 import PostConcept from "./post";
 import UserConcept from "./user";
 
-interface ProfileObj extends BaseDoc {
+interface Post extends BaseDoc {
   user: UserConcept;
   posts: Set<PostConcept>;
   followers: Set<ObjectId>;
