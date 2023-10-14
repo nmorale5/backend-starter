@@ -15,6 +15,23 @@ export default class TimeoutConcept {
     return { msg: "Timeout set!" };
   }
 
+  public async getAllDeadlines(timeframe: "all" | "active" | "expired") {
+    const now = new Date(Date.now());
+    let filter: {};
+    switch (timeframe) {
+      case "all":
+        filter = {};
+        break;
+      case "active":
+        filter = { deadline: { $gt: now } };
+        break;
+      case "expired":
+        filter = { deadline: { $lte: now } };
+        break;
+    }
+    return await this.resources.readMany(filter);
+  }
+
   public async getDeadline(content: ObjectId) {
     return (await this.resources.readOne({ content }))?.deadline;
   }

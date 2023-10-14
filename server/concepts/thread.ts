@@ -4,7 +4,6 @@ import { NotFoundError } from "./errors";
 
 export interface ThreadParentDoc extends BaseDoc {
   content: ObjectId;
-  creator: ObjectId;
 }
 
 export interface ThreadLinkDoc extends BaseDoc {
@@ -17,15 +16,20 @@ export default class ThreadConcept {
   public readonly threads = new DocCollection<ThreadLinkDoc>("threads");
 
   public async createThread(content: ObjectId) {
-    return await this.threadParents.createOne({ content });
+    return await this.threadParents.createOne({ content: content as ObjectId });
   }
 
   public async linkToThread(content: ObjectId, parent: ObjectId) {
+    console.log(content, typeof content);
+    console.log(parent, typeof parent);
+    let msg: string;
     if (await this.threads.readOne({ content, parent })) {
-      return { msg: "Already linked to thread!" };
+      msg = "Already linked to thread!";
+    } else {
+      await this.threads.createOne({ content, parent });
+      msg = "Linked to thread!";
     }
-    await this.threads.createOne({ content, parent });
-    return { msg: "Linked to thread!" };
+    return { msg, thread: await this.threads.readOne({ content, parent }) };
   }
 
   public async getParent(content: ObjectId) {
@@ -37,7 +41,7 @@ export default class ThreadConcept {
   }
 
   public async getAllThreads() {
-    return await this.threadParents.readMany({});
+    return await this.threads.readMany({});
   }
 
   public async getAllFromThread(parent: ObjectId) {

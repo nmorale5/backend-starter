@@ -122,7 +122,7 @@ const operations: operation[] = [
   {
     name: "Add post to thread",
     endpoint: "/api/threads/:thread/:post",
-    method: "PUT",
+    method: "POST",
     fields: { thread: "input", post: "input" },
   },
   {
@@ -132,7 +132,7 @@ const operations: operation[] = [
     fields: { thread: "input", post: "input" },
   },
   {
-    name: "Delete thread and corresponding posts",
+    name: "Delete thread",
     endpoint: "/api/threads/:thread",
     method: "DELETE",
     fields: { content: "input" },
@@ -147,19 +147,43 @@ const operations: operation[] = [
     name: "Create Comment",
     endpoint: "/api/comments/:parent",
     method: "POST",
-    fields: { content: "input" },
+    fields: { parent: "input", content: "input" },
   },
   {
     name: "Update Comment",
-    endpoint: "/api/comments/:_id",
+    endpoint: "/api/comments/:id",
     method: "PATCH",
     fields: { id: "input", update: { content: "input" } },
   },
   {
     name: "Delete Comment",
-    endpoint: "/api/comments/:_id",
+    endpoint: "/api/comments/:id",
     method: "DELETE",
     fields: { id: "input" },
+  },
+  {
+    name: "Get Notifications (comments on my posts and posts from friends)",
+    endpoint: "/api/notifications",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Get Timeouts",
+    endpoint: "/api/timeout",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Is Active? (based on timeout)",
+    endpoint: "/api/timeout/:content",
+    method: "GET",
+    fields: { content: "input" },
+  },
+  {
+    name: "Set Timeout",
+    endpoint: "/api/timeout/:content/:duration",
+    method: "POST",
+    fields: { content: "input", duration: "input" },
   },
 ];
 

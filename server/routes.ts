@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Friend, Post, Thread, User, Vote, WebSession } from "./app";
+import { Friend, Post, Thread, Timeout, User, Vote, WebSession } from "./app";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -173,6 +173,7 @@ class Routes {
   // get all posts from the given thread
   @Router.get("/threads/:thread")
   async getPostsFromThread(thread: ObjectId) {
+    console.log(thread, typeof thread);
     return await Thread.getAllFromThread(thread);
   }
 
@@ -183,9 +184,9 @@ class Routes {
   }
 
   // add the given post to the given thread
-  @Router.put("/threads/:thread/:post")
+  @Router.post("/threads/:thread/:post")
   async addThread(session: WebSessionDoc, thread: ObjectId, post: ObjectId) {
-    return await Thread.linkToThread(thread, post);
+    return await Thread.linkToThread(post, thread);
   }
 
   // removes a post from a thread
@@ -205,7 +206,7 @@ class Routes {
     const comments = (await Thread.getAllFromThread(parent)).map(async (doc) => {
       return (await Post.getPosts({ _id: doc.content })).at(0);
     });
-    return await Promise.all(comments);
+    return (await Promise.all(comments)).filter((x) => x !== undefined);
   }
 
   @Router.post("/comments/:parent")
@@ -236,8 +237,48 @@ class Routes {
   @Router.get("/notifications")
   async getNotifications(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
-    const commentNotifs = (await Post.getByAuthor(user)).flatMap(async (post) => await Thread.getAllFromThread(post._id));
-    return await Promise.all(commentNotifs);
+    const friends = await Friend.getFriends(user);
+    // eslint-disable-next-line prettier/prettier
+    const following = friends.concat(
+      (await Friend.getRequests(user))
+        .filter(req => req.from.equals(user))
+        .map(req => req.to));
+    // eslint-disable-next-line prettier/prettier
+    const postFromFolloweeNotifs =
+      (await Promise.all(following.map(Post.getByAuthor))).flat();
+    // eslint-disable-next-line prettier/prettier
+    const commentOnMyPostNotifs =
+      (await Promise.all((await Post.getByAuthor(user))
+        .map(async (post) =>
+          await Thread.getAllFromThread(post._id))))
+        .flat();
+    return {
+      commentOnMyPostNotifs,
+      postFromFolloweeNotifs,
+    };
+  }
+
+  // Get all deadlines that have been created
+  @Router.get("/timeout")
+  async getAllDeadlines() {
+    return {
+      all: await Timeout.getAllDeadlines("all"),
+      active: await Timeout.getAllDeadlines("active"),
+      expired: await Timeout.getAllDeadlines("expired"),
+    };
+  }
+
+  // determine whether the given content is still active, or if it expired
+  @Router.get("/timeout/:content")
+  async isActive(content: ObjectId) {
+    return await Timeout.isActive(content);
+  }
+
+  // sets a timeout for duration seconds in the future
+  @Router.post("/timeout/:content/:duration")
+  async setTimeoutForDuration(content: ObjectId, duration: number) {
+    const deadline = new Date(new Date().getTime() + duration * 1000);
+    return await Timeout.setTimeout(content, deadline);
   }
 }
 
