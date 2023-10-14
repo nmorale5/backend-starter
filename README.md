@@ -20,9 +20,9 @@ To run the server, you need to create a MongoDb Atlas instance and connect your 
     ```
     MONGO_SRV=<connection url>
     ```
-    to the `.env` file. 
+   to the `.env` file.
 
-__Congrats!__ You're ready to run locally! Don't hesitate to reach out if you run into issues. 
+__Congrats!__ You're ready to run locally! Don't hesitate to reach out if you run into issues.
 
 ## Running Locally
 
@@ -46,12 +46,12 @@ so your session will be persisted across server restarts.
 
 ## Deploying to Vercel
 
-1. Fork this repo.
-2. Create a new project on Vercel and link it to your GitHub project.
-3. Under "Build & Development Settings", change "Output Directory" to `dist/public`.
-4. Add the following environment variables to your Vercel project:
-Key: `MONGO_SRV`, Value: `<your mongo connection string from .env file>`
-5. Deploy!
+1. Create a new project on Vercel and link it to your GitHub project.
+2. Under "Build & Development Settings", change "Output Directory" to `dist/public`.
+3. Add the following environment variables to your Vercel project:
+   Key: `MONGO_SRV`, Value: `<your mongo connection string from .env file>`
+   Note: only paste the right hand value after `=` (without `<` and `>`), i.e. `MONGO_SRV=<your mongo connection string>`
+4. Deploy!
 
 ## Understanding the Structure
 
@@ -65,19 +65,19 @@ which includes both concept and RESTful API implementations.
 
 Here's an overview of the files and directories:
 - `server/concepts` contains the concept implementations.
-Note that we try to keep concepts as modular and generic as possible.
+  Note that we try to keep concepts as modular and generic as possible.
 - `server/concepts/errors.ts` contains the base error classes you can
-either directly use or extend from. You are free to add more base errors
-in that file if you need to
-(e.g., if your route needs to return [I am a teapot](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418) error).
+  either directly use or extend from. You are free to add more base errors
+  in that file if you need to
+  (e.g., if your route needs to return [I am a teapot](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418) error).
 - `framework/` contains the framework code that does the magic to convert your
-route implementations and error handling into Express handlers.
-You should't edit this directory, but feel free to take a look!
+  route implementations and error handling into Express handlers.
+  You should't edit this directory, but feel free to take a look!
 - `server/app.ts` contains your app definition (i.e., concept instantiations).
 - `server/db.ts` contains the MongoDb setup code. You don't need to edit this file.
 - `server/routes.ts` contains the code for your API routes.
-Try to keep your route definitions as simple as possible.
+  Try to keep your route definitions as simple as possible.
 - `server/responses.ts` contains the code for formatting your responses and errors
-into a more user-friendly format for the front-end. For example, it would be better
-if your front-end receives `barish is not the author of this post` instead of
-`64e52a1f5ffc7d0d48a0569d is not the author of this post`.
+  into a more user-friendly format for the front-end. For example, it would be better
+  if your front-end receives `barish is not the author of this post` instead of
+  `64e52a1f5ffc7d0d48a0569d is not the author of this post`.
